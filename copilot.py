@@ -2,6 +2,7 @@ import asyncio
 import os
 from sydney import SydneyClient
 import io
+import cv2
 import pathlib
 import json
 from PIL import Image, ExifTags
@@ -9,35 +10,44 @@ from PIL.ExifTags import TAGS
 import piexif
 import glob
 
-os.environ["BING_COOKIES"] = "C_Auth=; _C_Auth=; _gcl_au=1.1.1448956925.1714043638; MC1=GUID=ccf20e3da5934cfa85b6c500681c34cb&HASH=ccf2&LV=202404&V=4&LU=1714128332126; _C_Auth=; SRCHD=AF=NOFORM; SRCHUID=V=2&GUID=A0C130DE030946A692CA0AEA4122C147&dmnchg=1; MUIDB=0A6CBF02E6E46BD623ABAB69E7B26ADF; ak_bmsc=5EBE66527E4DC472826F619773A5D865~000000000000000000000000000000~YAAQzUvWF8GowrGPAQAAvuPPzxd/5WMIcDUdkpK02tvm6SUXioVZETzPdMFv5gX540l94ZIrBGCnnSkGiGPzBQAUfV/RRIvLHMYbNZUgg51eyzpnP/CSskxmZBTCn9Pxt6f6WHMSwGKEOZYtgmHeh+AqViIJY9BMUYARlcLk+eN2xbmpBG8wGMicMlMTybqjybwm3IfC9mbqELOvAHFhqq9AT0m4oS6hLBn6hY4G3ONgD1oGbhwtxiwJNP+XtmU02/1HGxz2IygqGV8EiFP+XjWVpuKRfOyShxQwnp3voOfuil+8OOrbNCnpfoSYiCiXeD4kOp6Vq1JrhJyvNX2XsLHQuVB6WUP4VuAzfoYw0JjcwD/csk1r+bgssmjyfXvD0vJVdA274vhCzSYRKA==; MUID=0A6CBF02E6E46BD623ABAB69E7B26ADF; _Rwho=u=d&ts=2024-05-31; CSRFCookie=e169ba50-ee9f-422e-8ae5-867066fb57dc; ANON=A=9C06A6CAF043C0C8959B599CFFFFFFFF&E=1dd4&W=1; NAP=V=1.9&E=1d7a&C=vVqTKECtaSlsT4Q1dVjYcQaVYuzI0jnRrJjJbH49yssAS26AlV_xQQ&W=1; PPLState=1; KievRPSSecAuth=FACSBBRaTOJILtFsMkpLVWSG6AN6C/svRwNmAAAEgAAACEeMawjvzkbXUAQ+9jbipcQbPPEffpdMsYQoDHysppocfsEIFVXcbf6mvYaVotEcwMRZNiXBiDY6joMESnfcFu/7ZRpU6+3qx8nb/gh7evTx+rff34upObEoJhe41tHhEzEzTv1qhWlj5nUFyY8z1ZGXFL8jWw72r9+1ZKCFHNSV8QZenbjz030kNZAF/YNdbpaVvC+bg4ZrTM692E50TTQWHEDajqdNrFpoZcMvIqnmXSiY+CZAVQRmzl7oTprYARjsbBU+tKVYBOarMv9GVc4sgOI/AhfKSsZfuV/TUPvyDNl59jD+88TWYNSjSe0ulUb1h9Fg1+dRwHB4YgiuL2ThaTlemrCKFDsPjHjfu4cGd18DooQpqPI9AXMAGz4BuatLZtV3RtllLSDZtf4vlylQVYRSOKAhrw0hnPe/GFVa1LIEauDU2PY9GaIAy68lCtZqU2wEdZwE87qXbknmYKNMqbIhVLZiNngDdEhxt8j+gbsxlE9NIfwdL363J9Ptvvj9Ug4h5mxZv7rLbXoHGxPHSlYGX3WnDU5q50SRd+cL7oRuBCH3Ww8Kl72Ok7r5s44x/+GlazT+bGPry0o+UASpoJy4WF9K0JoNaxj/MokwfQxmPi7g6yqXMNrK9JVXMQNYdT18bdBUpIBkM3Pm5K/RR1lIBZthW1bIILw3WmUA7Eh6mQhk3RM+JE8UJg8JqIEilteBRTKEBZvi76iKOHjIkOdOKBUB5PIiWHdzkvAbw8/4geHxrO6Uu8e7ySu5d0ZcDtCN3LqSn/N91dWv1IwEW0qmF71LsDYJ6AtTORHL6dBfYsRaOnka0t++yRMVNQOSV/DxEDYcFsHZn1SZtIhs/G5EeicQQWHV8SmIsL75650uoOBMZPPBabzh9HM8QqzhElqZh2NwadWjzdKqUCEyLLIf4O3EZwQYiq0aOWf6rKuB3alU6ikKrJV/m95Tb4Uw1mH6d0gLOa+nmA75KDfZWN/LKAivYbLqfYol1FbKLfCUbSQhyI+8eYIYXytGcALU+dIWeul0GLq1jwO0v77DBtKUF4oa1cmwsycr2RITLOV4mlCDfMYqrHDFRSPJldDuAkgmbeyQH81B2oxjhI4joFYVFxiHv71mugAGkltdT3F99vRwC/0+1qL8PcJspHOUaG2qjoLV4ecFsgGoLQUgNL2f7OWmaOUlPur5Bb/j08sxuqh1c1XEXoGuUhy+plHmXh02u22NpsaMG5arddFapr6jW8VnUZNoVeh8uRb1aqXQ9PPOnGmFurMFufGMVau5lsAw+GpsjdgRo5/KKBfC6t02Q/l4btAV19edpy+a8/pCvsizG3p7hjjCrCAlG93eWD41Iap4h78kcCqCXYI39cCdboFDuBx0IlDLePhnkkNX6ynjaoaqo5ZwTIVylDLmr+VJunw3H10rTnPDWrf1FP/ZSHF0cvVKYGLVusf413qwFdXDH1/z5kspQDv4LFObE8ISJhuahbkUAIMaZeatKS35yt8tRadltcbKVwJe; _U=1GvuXQtTzNFVLGmbFk3AttDDpfJf8MjFB3LegHXQ358wk9HBFDklKlc8IRSN7yz1y8ySGU1Fs6IxndADyI1fCgto5Hg8WlACn_VKcQ9lTJKUr9jYCjAhO4eNG19pooQSz7x43DLXVvsK3SdE8nAxtrvKzVwBv1-vv_P1BY_IDixMCJUgPsn-FPtocL0u2ugrWZWoKOAoJwIdtb-oBiiO4n2FfrObw-whE4_yMVw2hbaE; WLS=C=7e77e0bb03e4825b&N=dickysuryo; WLID=IJTlXlD3MEaBW4EmITiuklTaLdqjU6Zbu1iAtXY7HWNWPOW/uGSd0GYtAsh5lgJXpsgCT/jtlBeNJdiYROt1dbOs1jXCjMg1/qUTWqm5TZQ=; _SS=SID=27D06F46CDC7663A28E77BD6CCA86701&R=0&RB=0&GB=0&RG=0&RP=0; GI_FRE_COOKIE=gi_prompt=1; _clck=1ohef47%7C2%7Cfm8%7C0%7C1612; _clsk=1p2eo0m%7C1717181010727%7C4%7C1%7Ct.clarity.ms%2Fcollect; MMCASM=ID=09134B9309324591A818D72281E4DD89; SRCHUSR=DOB=20240531&T=1717178459000&POEX=W&TPC=1717181014000; _EDGE_S=SID=27D06F46CDC7663A28E77BD6CCA86701&mkt=en-id&ui=id-id; _RwBf=r=0&ilt=1&ihpd=1&ispd=0&rc=0&rb=0&gb=0&rg=0&pc=0&mtu=0&rbb=0&g=0&cid=&clo=0&v=4&l=2024-05-31T07:00:00.0000000Z&lft=0001-01-01T00:00:00.0000000&aof=0&ard=0001-01-01T00:00:00.0000000&rwdbt=0001-01-01T16:00:00.0000000-08:00&rwflt=0001-01-01T16:00:00.0000000-08:00&o=0&p=MSAAUTOENROLL&c=MR000T&t=1876&s=2024-05-31T18:01:52.3522066+00:00&ts=2024-05-31T18:50:29.0469535+00:00&rwred=0&wls=2&wlb=0&wle=0&ccp=2&cpt=0&lka=0&lkt=0&aad=0&TH=&mta=0&e=ZHVaGCmlHDZTvXkKCYSS6bg1zt8--lndJGJgqqxuKfXu8o_sFj3Lyc5jRmbFXTqUpxfVV0YR3w80D1s7fwyp_w&A=9C06A6CAF043C0C8959B599CFFFFFFFF; _uetsid=d99723801f7711efaa44c9a3d3cbe829; _uetvid=d9973ff01f7711ef8d04474592cd34d6; _C_ETH=1; bm_sv=17C06BCA569EC3154FA9AB891BB72EEC~YAAQlu84F0cwLaWPAQAAM2v9zxfrea5bWcXrTfxrIttX+Cjll7H7DbwzLd3FSM116lKbhutgWTvL7rmiTW7V8yPZt1AVfn2zTdPbDdkRcXD1ael20dk30Jv5vm6N0ZkMzVx/3vlqbTuCZ5OzEdU1D0vVQATE11lqkwQLqbr6MOI0+2EAaNC4ifit6ZakUOXzDIp2KejU0iMYygbCneNJ2gFKzbOFqubOU2sU5sIh3fnRoF+ih2cwB5jfUFyBbphObO9pHQ==~1; SRCHHPGUSR=SRCHLANG=id&BRW=XW&BRH=T&CW=1701&CH=1305&SCW=1701&SCH=796&DPR=1.0&UTC=420&DM=1&PV=15.0.0&WTS=63852775259&HV=1717181426&PRVCW=2560&PRVCH=1305&CIBV=1.1764.0&cdxtone=Balanced&cdxtoneopts=galileo,flxvoice"
+os.environ["BING_COOKIES"] = "_gcl_au=1.1.1448956925.1714043638; MC1=GUID=ccf20e3da5934cfa85b6c500681c34cb&HASH=ccf2&LV=202404&V=4&LU=1714128332126; SRCHD=AF=NOFORM; SRCHUID=V=2&GUID=A0C130DE030946A692CA0AEA4122C147&dmnchg=1; MUIDB=0A6CBF02E6E46BD623ABAB69E7B26ADF; MUID=0A6CBF02E6E46BD623ABAB69E7B26ADF; GI_FRE_COOKIE=gi_prompt=1; MMCASM=ID=09134B9309324591A818D72281E4DD89; _clck=1ohef47%7C2%7Cfmd%7C1%7C1612; display-culture=en-US; _C_Auth=; _EDGE_S=SID=12263DCB899E6F221193295188B06EAC; ak_bmsc=0085903C817CB6943230C1EB9F8687CA~000000000000000000000000000000~YAAQ0kvWF3ejHQGQAQAA59+HAhjxs/vWHUp82oqT0yj0U3xNwQCM9BQSViallhO6vZoGa2WVqwyY01vXI++8YZib0/uLc985ZnrN3Drk2S/L1KeeaxwnOQFjNyKI4gNGE4cqmK7Fouwrpxvjz2gm5Qh7wiQkH9GPNBNyRbHZGdJCucUcjlNUwGs6D3Kp0Kg2aoGjjfLtopbkDJvEjXjlHImL4yNNUEJx/8fSTnp/h/7+Di1foZQgIZgV/m2tsv/QkX2Bwo5JggiQk+hdKo+xKebmPNO/wNVD79OG6c1IzzXYf91OkCVVvYk8AIWnF0KQ2eGhxr+BCJrjG41qfKhaaYkJiSk8F/7TRv2+PaYKNx5cZj/s4s3my1O+HeouGV2Q/vQSSc5aeZOsY6Lk; _Rwho=u=d&ts=2024-06-10; CSRFCookie=68c732c7-f4fc-4e1e-a4e5-ce4a044b8386; SRCHUSR=DOB=20240531&T=1718029377000&TPC=1717181014000&POEX=W; ANON=A=4471D23256EDD83420F283AEFFFFFFFF&E=1dd9&W=2; NAP=V=1.9&E=1d7f&C=tXX2eYCAhh0Mq5bJSOSHOT9C2EQKfr5iALlW1a8coZbns1utDf9Eyg&W=2; PPLState=1; KievRPSSecAuth=FAByBBRaTOJILtFsMkpLVWSG6AN6C/svRwNmAAAEgAAACJK9N6X1m6JCMARGasoCYmb8Ay3+9fu1HijB9juwakF5q4TdVZBfxoyq4psBLA6P5OJ9hReSF3Sh3ft3tdhGn9IOhrMzGw9gFvXwheT0UIvy4mGMu4+sQH1G/6YV66an3N3UAtqa+9tow0lmC47TWVmG2Zu0BDPJJONUveC6Ru/J2hO5rDB2ZuUyzHrLipO28vOumwUxWnwpuu6nyOYe8yXKGwQAsQCQUVm1R8u06uAPvo4tCJAEq7LeRB5aCh2c7xqZ/cmpI87JjJzZpjEfcuWGopA/LwWUzVKGeOmeEGgIHYkmpAxtkGPwM2iCszzvKYPVf21hYKmpFRhN/csa3g2ts5oGlWtiipPIGZrhzgRRt78HKC3cOfNmgJzY2UcWtS50nOW9/tqmg4pY0eonTNZCMc/hTDK80QroDR76a7ySqNiWC9t99s9q0YcX5bpD3jGPniUvHU9O3sr/95UfCFyNmZVUly5k2FBVmwDoCNHW2+wzgVPil2ZlXumWXrAd9jwetcb46XJTN3iT8CuB92oFPvxhB5bfAOpnkzYyhvpciH8PUE69s5rH/pFndhmt25Irg4xje4Es5JAyCEJY6+fPaPxckmFPGk/lmev2Qzs1k7TqqI+Bx8GMQpPRBJpff9l7CH/5jA7LJp4nRgUIAzvIwk1kYWEdr6Qn4N7r6LFgkPxUG1iRL87CZUoi0miNnGyph2rrDKG896ji0XaSfvpWTszYptF+1NxKYt4PtpJpnslGEOyia1OygAhfWRLutDnaUHGECQbsXKBws4a7mEqa3nELyA3N9y5GSyF+Lxj1ATG26gVnuQrW1uFB62XlqQQka0DWTw9A6uKzlzxrw/U4RATy75dilaj48x0CYnQzsegcCDIg/QXlp/hbxWSb7rUaA3ftDFBARkpNsixTcaxJjCis2mHqNZ0msy74FxWp6mn1YaKSy/bvUjN6EbK1sRxGJ0Z5wmEh+DFR8wABpVf4Xz+egPfP8kQ4ITAiZfC7Hb3az5BED97gcGiu/idqCXab/Byjby01hmt8hp8PEw1Pyio/sIc0s1F9W9WCuhXCgVFvizSr9DNq/cTEB7vCBK7Jqe/oncQRkRf0wjrcfEUZI4NBByXIOgXqtEB8v6ktOqJym4Dp+l/3qXdu5uUaKmX9538U3btLSPji+0XFZyfad4vxBN2fh/w2yUAf88zwFU7YEQYXPWeGcGlzTs3RLls+HZ2FJTkvnNHVumVdX0hF+mfEYg10EbBCrnoFpWHm2rCDWFFiyKQEO/46X3xpNgo5esCRfGI7Soh4uWEDHscgwQrgjjEKeUQ04ovZffAH1qJX9lBQGSCQCccfr21RH32qC8UBG+mNq8/aB4HfAs+uYzShcPuJwm/x2qt0I7CBg7h4peZWGxRa9zExbetutszwsYEq7JP0tPllCsdJEc5RhZtKx5IWtJ3/FABs2MJY2ZBTVLvMNSOTlq37wpkhQw==; _U=17yfTuavwDYTExIiWqZH50xNb4sFsPZM2-48PDi9zqspJIUPZW8UnZYLyAqSx3MzSmFoenOrC1DiVb9IwfJ4ayohNG572sAOHbyz40cuWn10xCXBarJc5pzxiEDnGPHT1G9ZGMzUgOwIraJwlAfMySw2xTFsyC02xxKaGAQKahfM6QM5URH6M6vFYCGQxAQ4ywbS8gTfk6C17TWOuF5kBpQ; WLS=C=811b24f74e5b363a&N=dicky; WLID=efdNk5zAq/w3XUv23OgoMtuILsTPHyVI6UFhvS/9j7VndTp8/9RKcXMVihzUrXv3VzH8S/SC3aAUsC0H8HF6KIWtY75MCC0nYe6EzgRHiOk=; _uetsid=f45c51a0273411efbf628b4d90ebde1a; _uetvid=d9973ff01f7711ef8d04474592cd34d6; _SS=SID=12263DCB899E6F221193295188B06EAC&R=134&RB=134&GB=0&RG=0&RP=134; _RwBf=r=0&ilt=1&ihpd=1&ispd=0&rc=134&rb=134&gb=0&rg=0&pc=134&mtu=0&rbb=0&g=0&cid=&clo=0&v=3&l=2024-06-10T07:00:00.0000000Z&lft=0001-01-01T00:00:00.0000000&aof=0&ard=0001-01-01T00:00:00.0000000&rwdbt=0001-01-01T16:00:00.0000000-08:00&rwflt=0001-01-01T16:00:00.0000000-08:00&o=0&p=BINGCOPILOTWAITLIST&c=MR000T&t=4512&s=2023-03-23T18:24:13.4192833+00:00&ts=2024-06-10T14:28:11.1057333+00:00&rwred=0&wls=2&wlb=0&wle=0&ccp=2&cpt=0&lka=0&lkt=0&aad=0&TH=&mta=0&e=RVQJLT4danL1E2f_vWwxoJKZONP8G7TnnLzI_mfY3fBq3H4-mduQUpS4zGaHMRi-Po_DdKpn3vYrW0xywOYdYQ&A=4471D23256EDD83420F283AEFFFFFFFF; _C_ETH=1; bm_sv=89485DA510FACCF564B12D9D68F33A25~YAAQzUvWFzW4BgGQAQAAsMuMAhh1BQ/HPG3TRWqrnIficD6lu1Wqce/7MnqLhfNLWZBhCawBW/7K+S7i2+ChqzFrFzJ9ttqzu74WqbVkaMTMZf5B0JFLo7XiQPTe72hgMzFZTKQHv8jWIUTejoB5aZa82XBZKenWY/nthYVerVdRUFnZLanmW1AW/sG9JCQdvs411FhHuCsA6WtW5Ei57vfPZlJEMviHQzCq4W3ZYN7ngERIih6Cgg7dnqfWP2iqr6IeSg==~1; SRCHHPGUSR=SRCHLANG=id&BRW=HTP&BRH=T&CW=983&CH=1305&SCW=983&SCH=796&DPR=1.0&UTC=420&DM=1&PV=15.0.0&WTS=63853626177&HV=1718029692&PRVCW=2560&PRVCH=1305&CIBV=1.1766.0&cdxtone=Balanced&cdxtoneopts=galileo,flxvoice";
 
 def edit_tag_metadata(image_path, new_tags,title):
-    try:
-        # Open the image
-        img = Image.open(image_path)
+    if "example" in image_path : 
+        return
+    else:
+        try:
+            # Open the image
+            img = Image.open(image_path)
 
-        # Extract existing EXIF data
-        exif_dict = piexif.load(img.info['exif'])
+            # Extract existing EXIF data
+            exif_dict = piexif.load(img.info['exif'])
 
-        # Convert new_tags list to a UTF-16 encoded string for EXIF
-        new_tags_str = "; ".join(new_tags).encode('utf-16le')
+            # Convert new_tags list to a UTF-16 encoded string for EXIF
+            new_tags_str = "; ".join(new_tags).encode('utf-16le')
         
-        # Add or update the UserComment tag
-        exif_dict["0th"][piexif.ImageIFD.XPKeywords] = new_tags_str
-        exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
-        print(exif_dict)
-        exif_bytes = piexif.dump(exif_dict)
-        img.save(image_path, exif=exif_bytes)
+            # Add or update the UserComment tag
+            exif_dict["0th"][piexif.ImageIFD.XPKeywords] = new_tags_str
+            exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
+            print(exif_dict)
+            exif_bytes = piexif.dump(exif_dict)
+            img.save(image_path, exif=exif_bytes)
 
-        print(f"Tag metadata added for image at '{image_path}': {new_tags}")
-    except Exception as e:
-        print(f"Error adding tag metadata for image at '{image_path}': {e}")
+            print(f"Tag metadata added for image at '{image_path}': {new_tags}")
+        except Exception as e:
+            print(f"Error adding tag metadata for image at '{image_path}': {e}")
 
 def get_jpg_images(folder_path):
     # Get all .jpg files in the folder
-    jpg_files = glob.glob(os.path.join(folder_path, '*.jpg'))
+    jpg_files = glob.glob(os.path.join(folder_path, '*.jpg')) + glob.glob(os.path.join(folder_path, '*.jpeg'))
     return jpg_files
 
+def reset_gambar(image_path):
+    img_default = "C:\\Users\\sethep\\Downloads\\shutterstock\\default\\default.jpg"
+    source_exif_dict = piexif.load(img_default)
+    piexif.transplant(img_default, image_path)
+    piexif.insert(piexif.dump(source_exif_dict), image_path)
+    print(source_exif_dict)
 
 def rename_file(current_name, new_name):
     """Renames a file from current_name to new_name."""
@@ -51,9 +61,13 @@ def rename_file(current_name, new_name):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+async def reset_chat():
+    async with SydneyClient() as sydney:
+        await sydney.reset_conversation()
+
 async def main(image_path) -> None:
     async with SydneyClient() as sydney:
-        response = await sydney.ask("Give title for this image , and description , and tags, with format json", attachment=image_path)
+        response = await sydney.ask("give json format for title , description, and tags", attachment=image_path)
         new_title = response.partition("title:")
         start_index = response.find("{")
         end_index = response.rfind("}")
@@ -77,11 +91,25 @@ async def main(image_path) -> None:
             except KeyError as e:
                 print("Error accessing title:", e)
         else:
-            print("JSON string is empty")
+            print(f"JSON string is empty '{json_content}'")
 if __name__ == "__main__":
     # rubah dengan folder kalian setiap \ tambahkan \
     # example : C:\\Users\\sethep\\Downloads\\shutterstock
     folder_path = "C:\\Users\\sethep\\Downloads\\shutterstock" 
     jpg_files = get_jpg_images(folder_path)
-    for file in jpg_files:
-        asyncio.run(main(file))
+    while True:
+        prompt = input("pilih 1 untuk reset dan pilih 2 ketika sudah reset: ")
+        if prompt == "1":
+            for file in jpg_files:
+                reset_gambar(file)
+            continue
+        elif prompt == "2":
+            for file in jpg_files:
+                asyncio.run(main(file))
+            break
+        elif prompt == "0":
+            asyncio.run(reset_chat())
+            break
+
+    # for file in jpg_files:
+    #     asyncio.run(main(file))
