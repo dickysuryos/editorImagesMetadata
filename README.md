@@ -9,7 +9,7 @@ Memudahkan mengubah metadata image menggunakan AI dalam satu folder, TerraTools 
 - Mengubah Metadata dalam 1 folder
 - Cukup Inject Cookie Copilot
 - Hanya memerlukan Path folder
-- 1 command dan rubah metadamu 
+- 1 command dan rubah metadatamu 
 
 
 ## Environment Variables
