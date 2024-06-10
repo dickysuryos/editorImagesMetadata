@@ -2,7 +2,6 @@ import asyncio
 import os
 from sydney import SydneyClient
 import io
-import cv2
 import pathlib
 import json
 from PIL import Image, ExifTags
@@ -80,7 +79,8 @@ async def main(image_path) -> None:
         else:
             print("JSON string is empty")
 if __name__ == "__main__":
-    # image_path = "C:\\Users\\sethep\\Downloads\\jambu.jpg"
+    # rubah dengan folder kalian setiap \ tambahkan \
+    # example : C:\\Users\\sethep\\Downloads\\shutterstock
     folder_path = "C:\\Users\\sethep\\Downloads\\shutterstock" 
     jpg_files = get_jpg_images(folder_path)
     for file in jpg_files:

@@ -1,0 +1,4 @@
+SydneyClient
+piexif
+ExifTag
+pathlib
