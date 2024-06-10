@@ -43,9 +43,12 @@ def get_jpg_images(folder_path):
     return jpg_files
 
 def reset_gambar(image_path):
-    img_default = "C:\\Users\\sethep\\Downloads\\shutterstock\\default\\default.jpg"
-    source_exif_dict = piexif.load(img_default)
-    piexif.transplant(img_default, image_path)
+    folder_name = 'default\\default.jpg'
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    print(f"root path '{root_path}'")
+    folder_path = os.path.join(root_path, folder_name)
+    source_exif_dict = piexif.load(folder_path)
+    piexif.transplant(folder_path, image_path)
     piexif.insert(piexif.dump(source_exif_dict), image_path)
     print(source_exif_dict)
 
@@ -110,6 +113,3 @@ if __name__ == "__main__":
         elif prompt == "0":
             asyncio.run(reset_chat())
             break
-
-    # for file in jpg_files:
-    #     asyncio.run(main(file))
