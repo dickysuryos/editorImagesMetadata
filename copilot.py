@@ -70,7 +70,7 @@ async def reset_chat():
 
 async def main(image_path) -> None:
     async with SydneyClient() as sydney:
-        response = await sydney.ask("give json format for title , description, and tags", attachment=image_path)
+        response = await sydney.ask("give json format for title without special character or symbol just alphabet, description, and give tags as you can list all tag for this image", attachment=image_path)
         new_title = response.partition("title:")
         start_index = response.find("{")
         end_index = response.rfind("}")
