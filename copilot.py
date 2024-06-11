@@ -98,7 +98,9 @@ async def main(image_path) -> None:
 if __name__ == "__main__":
     # rubah dengan folder kalian setiap \ tambahkan \
     # example : C:\\Users\\sethep\\Downloads\\shutterstock
-    folder_path = "C:\\Users\\sethep\\Downloads\\shutterstock" 
+    default_path = "images" 
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    folder_path = root_path + default_path
     jpg_files = get_jpg_images(folder_path)
     while True:
         prompt = input("pilih 1 untuk reset dan pilih 2 ketika sudah reset: ")
