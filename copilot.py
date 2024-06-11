@@ -84,11 +84,11 @@ async def main(image_path) -> None:
                 tags = data["tags"]
                 directory, file_name = os.path.split(image_path)
                 newPath = os.path.join(directory,f"{title}")
-                print(f"newpath = {newPath}")
-                print(f"tags = {tags}")
+                # print(f"newpath = {newPath}")
+                # print(f"tags = {tags}")
                 rename_file(image_path,f"{newPath}.jpg")
                 edit_tag_metadata(f"{newPath}.jpg",tags,title)
-                print(data)
+                # print(data)
             except json.decoder.JSONDecodeError as e:
                 print("Error decoding JSON:", e)
             except KeyError as e:
@@ -101,7 +101,6 @@ if __name__ == "__main__":
     default_path = "\\images" 
     root_path = os.path.dirname(os.path.abspath(__file__))
     folder_path = f"{root_path}{default_path}"
-    print(folder_path)
     jpg_files = get_jpg_images(folder_path)
     while True:
         prompt = input("pilih 1 untuk reset dan pilih 2 ketika sudah reset: ")
